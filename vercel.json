@@ -11,8 +11,5 @@
       "src": "/(.*)",
       "dest": "src/index.ts"
     }
-  ],
-  "env": {
-    "API_KEY": "@api_key"
-  }
+  ]
 }
