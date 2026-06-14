@@ -1,12 +1,67 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const API_KEY = process.env.API_KEY || 'dev-key-12345';
 
 // Middleware
 app.use(express.json());
 app.use(cors());
+
+// API Key Validation Middleware
+const validateApiKey = (req: Request, res: Response, next: NextFunction) => {
+  const apiKey = req.headers['x-api-key'];
+
+  if (!apiKey) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+      message: 'API key is required. Pass it in the x-api-key header.',
+      example: 'curl -H "x-api-key: YOUR_API_KEY" http://localhost:5000/api/security-tips',
+    });
+  }
+
+  if (apiKey !== API_KEY) {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'Invalid API key',
+    });
+  }
+
+  next();
+};
+
+// Public endpoint (no API key needed)
+app.get('/', (req: Request, res: Response) => {
+  res.json({
+    message: 'Cybersecurity API is running',
+    version: '1.0.0',
+    note: 'Most endpoints require an API key. Pass it in the x-api-key header.',
+    endpoints: {
+      public: [
+        'GET / (this endpoint)'
+      ],
+      protected: [
+        'POST /api/password-strength',
+        'POST /api/phishing-check',
+        'POST /api/vulnerability-scan',
+        'GET /api/security-tips',
+        'GET /api/threat-types',
+        'POST /api/threat-analysis',
+        'GET /api/best-practices',
+        'GET /api/encryption-methods',
+      ],
+    },
+    authentication: {
+      method: 'Header-based API Key',
+      header: 'x-api-key',
+      example: 'x-api-key: your-api-key-here',
+    },
+  });
+});
+
+// Apply API key validation to all protected routes
+app.use('/api/', validateApiKey);
 
 // ============================================
 // TYPES & INTERFACES
@@ -181,23 +236,7 @@ function assessVulnerabilities(data: any): VulnerabilityResult {
 // ROUTES
 // ============================================
 
-// Health Check
-app.get('/', (req: Request, res: Response) => {
-  res.json({
-    message: 'Cybersecurity API is running',
-    version: '1.0.0',
-    endpoints: [
-      'POST /api/password-strength',
-      'POST /api/phishing-check',
-      'POST /api/vulnerability-scan',
-      'GET /api/security-tips',
-      'GET /api/threat-types',
-      'POST /api/threat-analysis',
-      'GET /api/best-practices',
-      'GET /api/encryption-methods',
-    ],
-  });
-});
+
 
 // Password Strength Checker
 app.post('/api/password-strength', (req: Request, res: Response) => {
